@@ -203,7 +203,7 @@ class TextScramble {
     }
 
     el.textContent = '\u00A0';
-    setTimeout(() => new TextScramble(el).setText(original, 7), 400 + i * 380);
+    setTimeout(() => new TextScramble(el).setText(original, 14), 400 + i * 380);
   });
 
   // Bidirectional для остальных секций — на мобиле тоже работает
@@ -444,7 +444,7 @@ class TextScramble {
         if (isMobile && !el.classList.contains('hero-brand')) return;
         const orig = el.dataset.heroText || el.textContent.trim();
         el.dataset.heroText = orig;
-        setTimeout(() => new TextScramble(el).setText(orig, 7), 300 + i * 350);
+        setTimeout(() => new TextScramble(el).setText(orig, 14), 300 + i * 350);
       });
     });
   }, { threshold: 0.4 });
