@@ -11,9 +11,12 @@
   let cols, drops;
 
   function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    cols  = Math.floor(canvas.width / 18);
+    // Используем screen.width/height на мобиле чтобы адресная строка не дёргала canvas
+    const w = window.screen ? Math.max(window.innerWidth,  screen.width  || 0) : window.innerWidth;
+    const h = window.screen ? Math.max(window.innerHeight, screen.height || 0) : window.innerHeight;
+    canvas.width  = w;
+    canvas.height = h;
+    cols  = Math.floor(w / 18);
     drops = Array.from({ length: cols }, () => Math.random() * -80);
   }
 
@@ -23,23 +26,31 @@
 
     for (let i = 0; i < cols; i++) {
       const ch = chars[Math.floor(Math.random() * chars.length)];
-      // Bright head
       ctx.fillStyle = `rgba(200,255,200,${0.7 + Math.random()*0.3})`;
       ctx.font = '13px "Share Tech Mono", monospace';
       ctx.fillText(ch, i * 18, drops[i] * 18);
-
-      // Green trail
       ctx.fillStyle = '#00ff41';
-      ctx.font = '13px "Share Tech Mono", monospace';
       ctx.fillText(ch, i * 18, drops[i] * 18);
-
       if (drops[i] * 18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
       drops[i] += 0.65;
     }
   }
 
   resize();
-  window.addEventListener('resize', resize);
+
+  // Дебаунс — не реагируем на мелкие изменения высоты (адресная строка мобила)
+  let resizeTimer;
+  let lastW = window.innerWidth;
+  window.addEventListener('resize', () => {
+    const newW = window.innerWidth;
+    // Ресайзим только если изменилась ШИРИНА (не высота от адресной строки)
+    if (newW !== lastW) {
+      lastW = newW;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 200);
+    }
+  }, { passive: true });
+
   setInterval(draw, 45);
 })();
 
@@ -178,14 +189,24 @@ class TextScramble {
 }
 
 (function initScramble() {
+  const isMobile = window.matchMedia('(hover: none), (max-width: 900px)').matches;
   const heroEls = document.querySelectorAll('#hero [data-scramble]');
+
   heroEls.forEach((el, i) => {
     const original = el.textContent.trim();
+
+    // На мобиле — скрамбл только для .hero-brand (FIXFORGE), остальное просто показываем
+    if (isMobile && !el.classList.contains('hero-brand')) {
+      // Просто показываем текст без скрамбла — анимация fade уже в CSS
+      el.textContent = original;
+      return;
+    }
+
     el.textContent = '\u00A0';
     setTimeout(() => new TextScramble(el).setText(original, 7), 400 + i * 380);
   });
 
-  // Bidirectional — replays every time element enters viewport
+  // Bidirectional для остальных секций — на мобиле тоже работает
   const io = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       const el = entry.target;
@@ -411,13 +432,16 @@ class TextScramble {
 
 /* ── Hero: повторная scramble-анимация при скролле назад ─── */
 (function initHeroScrambleRepeat() {
-  const heroEls = document.querySelectorAll('#hero [data-scramble]');
-  if (!heroEls.length) return;
+  const isMobile = window.matchMedia('(hover: none), (max-width: 900px)').matches;
+  const hero = document.getElementById('hero');
+  if (!hero) return;
 
   const io = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      heroEls.forEach((el, i) => {
+      hero.querySelectorAll('[data-scramble]').forEach((el, i) => {
+        // На мобиле — только FIXFORGE
+        if (isMobile && !el.classList.contains('hero-brand')) return;
         const orig = el.dataset.heroText || el.textContent.trim();
         el.dataset.heroText = orig;
         setTimeout(() => new TextScramble(el).setText(orig, 7), 300 + i * 350);
@@ -425,8 +449,7 @@ class TextScramble {
     });
   }, { threshold: 0.4 });
 
-  const hero = document.getElementById('hero');
-  if (hero) io.observe(hero);
+  io.observe(hero);
 })();
 
 
