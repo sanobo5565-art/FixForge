@@ -178,29 +178,38 @@
 /* ── Text Scramble ────────────────────────────────────────── */
 class TextScramble {
   constructor(el) {
-    this.el    = el;
-    this.noise = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef0123456789@#$%&<>/\\|';
-    this.raf   = null;
+    this.el   = el;
+    // Только цифры — идеально моноширинные в JetBrains Mono, никакого layout-сдвига
+    this.noise = '0123456789';
+    this.raf  = null;
   }
 
   setText(newText, speed = 3) {
-    const len = newText.length;
-    let frame = 0;
+    const chars = Array.from(newText);
+    const len   = chars.length;
+    let frame   = 0;
     cancelAnimationFrame(this.raf);
 
+    // Сразу ставим невидимые заглушки нужной длины — высота не прыгает
+    this.el.textContent = newText.replace(/[^\s]/g, '\u00A0');
+
     const tick = () => {
+      // Сколько символов уже "разрешено" слева направо
       const resolved = Math.floor(frame / speed);
       let out = '';
 
       for (let i = 0; i < len; i++) {
-        const ch = newText[i];
-        if (ch === ' ' || ch === '\u00A0' || ch === '—' || ch === '-') {
-          out += ch;
+        const ch = chars[i];
+        // Пробелы и спецсимволы — всегда выводим как есть
+        if (/[\s\u00A0\-—\/\\]/.test(ch)) {
+          out += `<span>${ch}</span>`;
         } else if (i < resolved) {
+          // Разрешённый символ — показываем финальный
           out += `<span style="color:inherit">${ch}</span>`;
         } else {
+          // Ещё "шумит" — цифра, одинаковая ширина гарантирована
           const r = this.noise[Math.floor(Math.random() * this.noise.length)];
-          out += `<span style="opacity:0.35;color:#00ff41">${r}</span>`;
+          out += `<span style="opacity:0.25;color:#00ff41">${r}</span>`;
         }
       }
 
@@ -233,7 +242,7 @@ class TextScramble {
     }
 
     el.textContent = '\u00A0';
-    setTimeout(() => new TextScramble(el).setText(original, 7), 400 + i * 380);
+    setTimeout(() => new TextScramble(el).setText(original, 4), 240 + i * 228);
   });
 
   // Bidirectional для остальных секций — на мобиле тоже работает
@@ -244,7 +253,7 @@ class TextScramble {
       const orig = el.dataset.scrambleText || el.textContent.trim();
       el.dataset.scrambleText = orig;
       if (entry.isIntersecting) {
-        new TextScramble(el).setText(orig, 5);
+        new TextScramble(el).setText(orig, 3);
       }
     });
   }, { threshold: 0.25 });
@@ -474,7 +483,7 @@ class TextScramble {
         if (isMobile && !el.classList.contains('hero-brand')) return;
         const orig = el.dataset.heroText || el.textContent.trim();
         el.dataset.heroText = orig;
-        setTimeout(() => new TextScramble(el).setText(orig, 7), 300 + i * 350);
+        setTimeout(() => new TextScramble(el).setText(orig, 4), 180 + i * 210);
       });
     });
   }, { threshold: 0.4 });
