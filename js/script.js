@@ -2,48 +2,54 @@
    FixForge — script.js
    ========================================================= */
 
-/* ── Matrix rain canvas — FULL SITE ──────────────────────── */
+/* ── Matrix rain canvas — refined ────────────────────────── */
 (function initMatrix() {
   const canvas = document.getElementById('matrix-canvas');
   if (!canvas) return;
   const ctx   = canvas.getContext('2d');
-  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789ABCDEF><=/\\|FIXFORGE';
-  let cols, drops;
+  // Более refined набор — меньше хаоса, больше структуры
+  const chars = 'アウエカキクコサシスセタチツテトナニハヒフヘホ0123456789ABCDEF><=/|';
+  let cols, drops, speeds;
 
   function resize() {
-    // Используем screen.width/height на мобиле чтобы адресная строка не дёргала canvas
     const w = window.screen ? Math.max(window.innerWidth,  screen.width  || 0) : window.innerWidth;
     const h = window.screen ? Math.max(window.innerHeight, screen.height || 0) : window.innerHeight;
     canvas.width  = w;
     canvas.height = h;
-    cols  = Math.floor(w / 18);
-    drops = Array.from({ length: cols }, () => Math.random() * -80);
+    cols   = Math.floor(w / 20);
+    drops  = Array.from({ length: cols }, () => Math.random() * -100);
+    speeds = Array.from({ length: cols }, () => 0.3 + Math.random() * 0.5);
   }
 
   function draw() {
-    ctx.fillStyle = 'rgba(6,6,6,0.048)';
+    // Более глубокий fade — меньше хвостов
+    ctx.fillStyle = 'rgba(3,5,7,0.06)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     for (let i = 0; i < cols; i++) {
       const ch = chars[Math.floor(Math.random() * chars.length)];
-      ctx.fillStyle = `rgba(200,255,200,${0.7 + Math.random()*0.3})`;
-      ctx.font = '13px "Share Tech Mono", monospace';
-      ctx.fillText(ch, i * 18, drops[i] * 18);
-      ctx.fillStyle = '#00ff41';
-      ctx.fillText(ch, i * 18, drops[i] * 18);
-      if (drops[i] * 18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-      drops[i] += 0.65;
+      const y  = drops[i] * 20;
+
+      // Голова колонки — ярче
+      ctx.font = '12px "JetBrains Mono", "Share Tech Mono", monospace';
+      ctx.fillStyle = `rgba(180,255,220,${0.8 + Math.random()*0.2})`;
+      ctx.fillText(ch, i * 20, y);
+
+      // Цвет колонны чуть холоднее и тусклее
+      ctx.fillStyle = `rgba(0,200,100,${0.35 + Math.random()*0.2})`;
+      ctx.fillText(ch, i * 20, y);
+
+      if (y > canvas.height && Math.random() > 0.978) drops[i] = 0;
+      drops[i] += speeds[i];
     }
   }
 
   resize();
 
-  // Дебаунс — не реагируем на мелкие изменения высоты (адресная строка мобила)
   let resizeTimer;
   let lastW = window.innerWidth;
   window.addEventListener('resize', () => {
     const newW = window.innerWidth;
-    // Ресайзим только если изменилась ШИРИНА (не высота от адресной строки)
     if (newW !== lastW) {
       lastW = newW;
       clearTimeout(resizeTimer);
@@ -51,7 +57,7 @@
     }
   }, { passive: true });
 
-  setInterval(draw, 45);
+  setInterval(draw, 50);
 })();
 
 
@@ -83,36 +89,60 @@
 })();
 
 
-/* ── Custom cursor trail ──────────────────────────────────── */
+/* ── Custom cursor — refined crosshair ───────────────────── */
 (function initCursorTrail() {
-  const dots = [];
-  const N = 10;
-  for (let i = 0; i < N; i++) {
-    const d = document.createElement('div');
-    d.style.cssText = `
-      position:fixed;pointer-events:none;z-index:9999;
-      width:${4 + i*0.5}px;height:${4 + i*0.5}px;
-      border-radius:50%;
-      background:rgba(0,255,65,${0.6 - i*0.05});
-      box-shadow:0 0 ${6+i}px rgba(0,255,65,${0.4-i*0.03});
-      transition:transform 0.05s;
-      transform:translate(-50%,-50%);
-    `;
-    document.body.appendChild(d);
-    dots.push({ el: d, x: 0, y: 0 });
-  }
-  let mx = 0, my = 0;
-  window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-  function animateDots() {
-    dots[0].x = mx; dots[0].y = my;
-    for (let i = 1; i < N; i++) {
-      dots[i].x += (dots[i-1].x - dots[i].x) * 0.35;
-      dots[i].y += (dots[i-1].y - dots[i].y) * 0.35;
+  if (window.matchMedia('(hover: none)').matches) return; // мобиль — не нужно
+  // Основная точка — маленький ромб
+  const ring = document.createElement('div');
+  ring.style.cssText = `
+    position:fixed;pointer-events:none;z-index:9999;
+    width:20px;height:20px;
+    border:1px solid rgba(0,255,136,0.7);
+    transform:translate(-50%,-50%) rotate(45deg);
+    transition:width 0.15s, height 0.15s, opacity 0.15s;
+    mix-blend-mode: screen;
+  `;
+  const dot = document.createElement('div');
+  dot.style.cssText = `
+    position:fixed;pointer-events:none;z-index:9999;
+    width:3px;height:3px;
+    background:rgba(0,255,136,0.9);
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 6px rgba(0,255,136,0.6);
+  `;
+  document.body.appendChild(ring);
+  document.body.appendChild(dot);
+
+  let tx = 0, ty = 0, rx = 0, ry = 0;
+  window.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+
+  // Hover на кликабельных — расширяем ромб
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest('a, button, [role=button]')) {
+      ring.style.width = '32px';
+      ring.style.height = '32px';
+      ring.style.opacity = '0.5';
     }
-    dots.forEach(d => { d.el.style.left = d.x+'px'; d.el.style.top = d.y+'px'; });
-    requestAnimationFrame(animateDots);
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('a, button, [role=button]')) {
+      ring.style.width = '20px';
+      ring.style.height = '20px';
+      ring.style.opacity = '1';
+    }
+  });
+
+  function animate() {
+    rx += (tx - rx) * 0.18;
+    ry += (ty - ry) * 0.18;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    dot.style.left  = tx + 'px';
+    dot.style.top   = ty + 'px';
+    requestAnimationFrame(animate);
   }
-  animateDots();
+  animate();
 })();
 
 
@@ -149,7 +179,7 @@
 class TextScramble {
   constructor(el) {
     this.el    = el;
-    this.noise = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef0123456789@#$%&<>/\\|ФИКСФОРДЖабвгдежзи';
+    this.noise = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef0123456789@#$%&<>/\\|';
     this.raf   = null;
   }
 
@@ -203,7 +233,7 @@ class TextScramble {
     }
 
     el.textContent = '\u00A0';
-    setTimeout(() => new TextScramble(el).setText(original, 14), 400 + i * 380);
+    setTimeout(() => new TextScramble(el).setText(original, 7), 400 + i * 380);
   });
 
   // Bidirectional для остальных секций — на мобиле тоже работает
@@ -444,7 +474,7 @@ class TextScramble {
         if (isMobile && !el.classList.contains('hero-brand')) return;
         const orig = el.dataset.heroText || el.textContent.trim();
         el.dataset.heroText = orig;
-        setTimeout(() => new TextScramble(el).setText(orig, 14), 300 + i * 350);
+        setTimeout(() => new TextScramble(el).setText(orig, 7), 300 + i * 350);
       });
     });
   }, { threshold: 0.4 });
