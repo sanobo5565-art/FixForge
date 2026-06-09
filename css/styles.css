@@ -67,34 +67,6 @@ ul { list-style: none; }
   );
 }
 
-/* ─── Corner decorations — refined ─────────────────────── */
-.corner-tl, .corner-tr, .corner-bl, .corner-br {
-  position: fixed;
-  width: 48px; height: 48px;
-  z-index: 200;
-  pointer-events: none;
-  opacity: 0.35;
-  transition: opacity 0.4s;
-}
-.corner-tl { top:20px; left:20px;  border-top:1px solid var(--g1); border-left:1px solid var(--g1); }
-.corner-tr { top:20px; right:20px; border-top:1px solid var(--g1); border-right:1px solid var(--g1); }
-.corner-bl { bottom:20px; left:20px;  border-bottom:1px solid var(--g1); border-left:1px solid var(--g1); }
-.corner-br { bottom:20px; right:20px; border-bottom:1px solid var(--g1); border-right:1px solid var(--g1); }
-
-/* Corner inner dot */
-.corner-tl::after, .corner-tr::after, .corner-bl::after, .corner-br::after {
-  content: '';
-  position: absolute;
-  width: 4px; height: 4px;
-  background: var(--g1);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--g1);
-}
-.corner-tl::after { top:-2px; left:-2px; }
-.corner-tr::after { top:-2px; right:-2px; }
-.corner-bl::after { bottom:-2px; left:-2px; }
-.corner-br::after { bottom:-2px; right:-2px; }
-
 /* Particle field */
 .particle-field {
   position: fixed;
@@ -260,7 +232,7 @@ nav, section, footer { position: relative; z-index: 2; }
 .mobile-cta { color: var(--g1) !important; }
 
 /* ─── Section commons ───────────────────────────────────── */
-section { padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 5vw, 5rem); }
+section { padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 4vw, 3rem); max-width: 100%; box-sizing: border-box; }
 
 .section-tag {
   font-family: var(--font-mono);
@@ -325,7 +297,7 @@ section { padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 5vw, 5rem); }
   min-height: 100dvh;
   display: flex;
   align-items: center;
-  padding: 0 clamp(1rem, 5vw, 5rem);
+  padding: 0 clamp(1rem, 4vw, 3rem);
   overflow: hidden;
 }
 .hero-content {
@@ -1191,7 +1163,7 @@ section { padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 5vw, 5rem); }
 #footer {
   background: rgba(3,5,7,0.95);
   border-top: 1px solid var(--border);
-  padding: 4rem clamp(1rem, 5vw, 5rem) 1.5rem;
+  padding: 4rem clamp(1rem, 4vw, 3rem) 1.5rem;
   position: relative;
 }
 #footer::before {
@@ -1308,19 +1280,137 @@ section { padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 5vw, 5rem); }
   100% { transform: translateY(-120vh) translateX(var(--dx, 30px)); opacity: 0; }
 }
 
+/* ─── Глобальный фикс переполнения ──────────────────────── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+* { min-width: 0; }
+
 /* ─── Responsive ────────────────────────────────────────── */
 @media(max-width:900px) {
   .nav-links, .nav-status { display:none; }
   .burger { display:flex; margin-left:auto; }
-  .corner-tl, .corner-tr, .corner-bl, .corner-br { width:32px; height:32px; }
 }
-@media(max-width:600px) {
-  .services-grid { grid-template-columns: 1fr; background: none; border: none; gap: 1px; }
-  .service-card { border: 1px solid var(--border); }
-  .stats-grid { grid-template-columns: repeat(2,1fr); }
-  .hero-title { font-size: clamp(2rem, 11vw, 3.2rem); }
-  .hero-cta-row { flex-direction: column; }
+
+@media(max-width:768px) {
+  /* Секции — фиксированный паддинг, никакого clamp с 5vw */
+  section {
+    padding: 3rem 1rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  #hero {
+    padding: 0 1rem;
+    min-height: 100dvh;
+  }
+  #footer {
+    padding: 3rem 1rem 1.5rem;
+  }
+
+  /* Центрирование текста */
+  .section-tag,
+  .section-title,
+  .section-sub { text-align: center; }
+  .section-tag { padding-left: 0; }
+  .section-tag::before { display: none; }
+
+  /* Hero */
+  .hero-content { max-width: 100%; }
+  .hero-title { font-size: clamp(1.7rem, 8vw, 2.8rem); word-break: break-word; }
+  .hero-tag { font-size: 0.68rem; letter-spacing: 0.1em; }
+  .hero-cta-row {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .hero-btn-primary,
+  .hero-btn-secondary,
+  .hero-btn-social {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
   .data-node { display: none; }
+
+  /* Services */
+  .badges-row { justify-content: center; gap: 0.5rem; }
+  .badge { font-size: 0.72rem; padding: 0.4em 0.8em; }
+  .services-grid {
+    grid-template-columns: 1fr;
+    background: none;
+    border: none;
+    gap: 0.75rem;
+    width: 100%;
+  }
+  .service-card {
+    border: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Pricing */
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    width: 100%;
+  }
+  .price-card { width: 100%; box-sizing: border-box; }
+  .price-list li { font-size: 0.74rem; }
+
+  /* About */
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    width: 100%;
+  }
+  .about-text p { font-size: 0.88rem; }
+  .terminal-box { width: 100%; box-sizing: border-box; }
+  .terminal-body { padding: 1rem; font-size: 0.78rem; }
+  .terminal-line { font-size: 0.76rem; word-break: break-word; }
+
+  /* Contact */
+  .contact-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  .contact-form-wrap { width: 100%; box-sizing: border-box; }
+  .contact-form { padding: 1.2rem 1rem; }
+  .contact-info { width: 100%; }
+  .contact-item { width: 100%; box-sizing: border-box; }
+  .submit-btn { width: 100%; }
+  .qb-row { flex-wrap: wrap; }
+  .qb-btn { flex: 1 1 auto; text-align: center; }
+
+  /* Footer */
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    width: 100%;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    gap: 0.4rem;
+    text-align: center;
+  }
+  .footer-bottom-left { align-items: center; }
+
+  /* Section sizes */
+  .section-title { font-size: clamp(1.3rem, 6vw, 1.8rem); }
+}
+
+@media(max-width:480px) {
+  section { padding: 2.5rem 0.85rem; }
+  #navbar { padding: 0 0.85rem; }
+  .nav-logo .logo-text { font-size: 0.78em; }
+  .hero-title { font-size: clamp(1.5rem, 8vw, 2.2rem); }
+  .hero-tag { font-size: 0.62rem; letter-spacing: 0.08em; white-space: normal; }
+  .hero-scroll { display: none; }
+  .price-list li span:last-child { white-space: normal; text-align: right; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .work-hours { box-sizing: border-box; width: 100%; }
 }
 
 /* ── Мобильные активные состояния ───────────────────────── */
@@ -1344,5 +1434,4 @@ section { padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 5vw, 5rem); }
   }
   .hero-btn-primary:active { background: transparent; color: var(--g1); }
   .hero-btn-secondary:active { border-color: var(--border3); color: var(--white); }
-  .hero-cta-row { flex-direction: column; align-items: flex-start; }
 }
